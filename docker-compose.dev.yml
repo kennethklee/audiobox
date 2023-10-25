@@ -1,0 +1,20 @@
+# Inherits docker-compose.yml
+
+services:
+  app:
+    image: audiobox:app
+    build:
+      context: .
+      target: gobuilder
+    networks:
+      - default
+    ports:
+      - "${PORT:-8080}:8090"
+    environment:
+      - APP_ENV=development
+    command: audiobox serve --http 0.0.0.0:8090
+
+    develop:
+      watch:
+        - action: rebuild
+          path: .

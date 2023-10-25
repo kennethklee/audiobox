@@ -1,0 +1,11 @@
+# Inherits docker-compose.yml
+
+services:
+  app:
+    image: audiobox:staging
+    networks:
+      - default
+    ports:
+      - "8090"
+    environment:
+      - APP_ENV=staging

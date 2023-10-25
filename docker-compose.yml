@@ -1,0 +1,16 @@
+version: '3.8'
+
+volumes:
+  data: {}
+
+services:
+  app:
+    image: kennethkl/audiobox:${VERSION:-latest}
+    build:
+      context: .
+      args:
+        VERSION: ${VERSION:-latest}
+    volumes:
+      - data:/app/pb_data
+    environment:
+      - APP_ENV=${APP_ENV:-production}
