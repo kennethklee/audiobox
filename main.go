@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -49,26 +48,22 @@ func main() {
 
 func serveChipAudio(app core.App) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		fmt.Println("serveChipAudio", c.PathParam("chip"))
-
 		chips, err := app.Dao().FindRecordsByExpr("chips", &dbx.HashExp{"chip": c.PathParam("chip")})
 		if err != nil {
-			slog.Error("Couldn't find chip", "chip", c.PathParam("chip"), "err", err)
-			return err
+			return echo.ErrNotFound
 		}
 
-		fmt.Println("records", chips)
 		if len(chips) == 0 {
 			return echo.ErrNotFound
 		}
 
 		audio, err := app.Dao().FindRecordById("audio", chips[0].GetString("audio"))
 		if err != nil {
-			slog.Warn("Couldn't find associated audio with chip", "chip", c.PathParam("chip"), "err", err)
+			slog.WarnContext(c.Request().Context(), "Couldn't find associated audio with chip", "chip", c.PathParam("chip"), "err", err)
 			return echo.ErrNotFound
 		}
 
-		fmt.Printf("%+v\n", audio)
+		slog.InfoContext(c.Request().Context(), "Found audio for chip", "chip", c.PathParam("chip"), "audio", audio.PublicExport())
 		if audio.GetString("type") == "url" {
 			return streamAudioUrl(c, audio.GetString("url"))
 		} else if audio.GetString("type") == "file" {
@@ -82,6 +77,7 @@ func serveChipAudio(app core.App) echo.HandlerFunc {
 func streamAudioUrl(c echo.Context, audioUrl string) error {
 	resp, err := http.Get(audioUrl)
 	if err != nil {
+		slog.ErrorContext(c.Request().Context(), "Couldn't stream audio from url", "url", audioUrl, "err", err)
 		return err
 	}
 	defer resp.Body.Close()
@@ -92,6 +88,9 @@ func streamAudioUrl(c echo.Context, audioUrl string) error {
 
 	// Stream the response body to the client
 	_, err = io.Copy(c.Response(), resp.Body)
+	if err != nil {
+		slog.ErrorContext(c.Request().Context(), "Couldn't stream audio from url", "url", audioUrl, "err", err)
+	}
 	return err
 }
 
@@ -100,9 +99,14 @@ func streamAudioFile(app core.App, c echo.Context, audio *models.Record) error {
 	originalPath := baseFilesPath + "/" + audio.GetString("file")
 	fs, err := app.NewFilesystem()
 	if err != nil {
+		slog.ErrorContext(c.Request().Context(), "Couldn't create filesystem", "err", err)
 		return err
 	}
 	defer fs.Close()
 
-	return fs.Serve(c.Response(), c.Request(), originalPath, audio.GetString("file"))
+	if err := fs.Serve(c.Response(), c.Request(), originalPath, audio.GetString("file")); err != nil {
+		slog.ErrorContext(c.Request().Context(), "Couldn't serve audio file", "err", err)
+		return err
+	}
+	return nil
 }
