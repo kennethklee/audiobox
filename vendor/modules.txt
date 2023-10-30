@@ -182,6 +182,10 @@ github.com/aws/smithy-go/time
 github.com/aws/smithy-go/transport/http
 github.com/aws/smithy-go/transport/http/internal/io
 github.com/aws/smithy-go/waiter
+# github.com/breml/rootcerts v0.2.13
+## explicit; go 1.19
+github.com/breml/rootcerts
+github.com/breml/rootcerts/embedded
 # github.com/disintegration/imaging v1.6.2
 ## explicit
 github.com/disintegration/imaging

@@ -12,7 +12,9 @@ services:
       - "${PORT:-8080}:8090"
     environment:
       - APP_ENV=development
-    command: audiobox serve --http 0.0.0.0:8090
+      - VERSION=${VERSION:-(untracked)}
+    volumes:
+      - .:/app
 
     develop:
       watch:

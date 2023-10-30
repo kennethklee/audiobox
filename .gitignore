@@ -1,3 +1,8 @@
+# os
 .DS_Store
+
+# run
+.cache
 pb_data
 audiobox
+*.log
